@@ -110,10 +110,14 @@ export function parseDotenv(raw: string): Record<string, string> {
   const values: Record<string, string> = {};
 
   for (const line of raw.split('\n')) {
-    const trimmed = line.trim();
+    let trimmed = line.trim();
 
     if (!trimmed || trimmed.startsWith('#')) {
       continue;
+    }
+
+    if (trimmed.startsWith('export ')) {
+      trimmed = trimmed.slice('export '.length).trim();
     }
 
     const separator = trimmed.indexOf('=');

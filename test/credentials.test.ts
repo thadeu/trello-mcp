@@ -22,6 +22,18 @@ describe('parseDotenv', () => {
       TRELLO_TOKEN: 'quoted',
     });
   });
+
+  it('parses shell-style export lines', () => {
+    expect(
+      parseDotenv(`
+        export TRELLO_API_KEY=abc
+        export TRELLO_TOKEN=def
+      `)
+    ).toEqual({
+      TRELLO_API_KEY: 'abc',
+      TRELLO_TOKEN: 'def',
+    });
+  });
 });
 
 describe('loadMcpCredentials', () => {
