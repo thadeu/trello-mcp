@@ -167,7 +167,7 @@ trello-mcp onboard
 
 For `~/.config/trello-mcp/.env`, use `KEY=value` or `export KEY=value` (both work).
 
-Interactive prompt lists boards by number. Re-run with `--force` to change the saved boards.
+Interactive prompt lists boards by number, id, or name. Re-run with `--force` to change the saved boards.
 
 ### Board id vs URL short code
 

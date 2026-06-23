@@ -2,8 +2,8 @@ import { stdin as input, stdout as output } from 'node:process';
 import * as readline from 'node:readline/promises';
 import { saveAllowedBoardIds } from '../board-store.js';
 import type { AppConfig } from '../config.js';
-import type { TrelloClient } from '../trello-client.js';
 import type { TrelloBoard } from '../trello-client.js';
+import type { TrelloClient } from '../trello-client.js';
 
 function printBoards(boards: TrelloBoard[]): void {
   console.error('Available boards:\n');
@@ -15,13 +15,43 @@ function printBoards(boards: TrelloBoard[]): void {
   });
 }
 
-function parseSelection(answer: string, boards: TrelloBoard[]): TrelloBoard[] {
-  const indexes = answer
-    .split(',')
-    .map((value) => Number.parseInt(value.trim(), 10) - 1)
-    .filter((value) => Number.isInteger(value) && value >= 0 && value < boards.length);
+export function parseBoardSelection(answer: string, boards: TrelloBoard[]): TrelloBoard[] {
+  const selected: TrelloBoard[] = [];
+  const seen = new Set<string>();
 
-  return [...new Set(indexes)].map((index) => boards[index]!);
+  for (const token of answer.split(',').map((value) => value.trim()).filter(Boolean)) {
+    const board = matchBoard(token, boards);
+
+    if (board && !seen.has(board.id)) {
+      seen.add(board.id);
+      selected.push(board);
+    }
+  }
+
+  return selected;
+}
+
+function matchBoard(token: string, boards: TrelloBoard[]): TrelloBoard | undefined {
+  const asNumber = Number.parseInt(token, 10);
+
+  if (Number.isInteger(asNumber) && asNumber >= 1 && asNumber <= boards.length) {
+    return boards[asNumber - 1];
+  }
+
+  const byId = boards.find((board) => board.id === token);
+
+  if (byId) {
+    return byId;
+  }
+
+  const lower = token.toLowerCase();
+  const byExactName = boards.find((board) => board.name.toLowerCase() === lower);
+
+  if (byExactName) {
+    return byExactName;
+  }
+
+  return boards.find((board) => board.name.toLowerCase().includes(lower));
 }
 
 export async function runOnboardingCli(
@@ -47,13 +77,16 @@ export async function runOnboardingCli(
   printBoards(boards);
 
   const rl = readline.createInterface({ input, output });
-  const answer = await rl.question('Select board numbers (comma-separated): ');
+  const answer = await rl.question(
+    'Select boards by number, id, or name (comma-separated): '
+  );
   rl.close();
 
-  const selected = parseSelection(answer, boards);
+  const selected = parseBoardSelection(answer, boards);
 
   if (selected.length === 0) {
     console.error('No valid board selection.');
+    console.error('Use list numbers (1, 2), board ids, or board names.');
     process.exit(1);
   }
 
@@ -62,6 +95,9 @@ export async function runOnboardingCli(
   await saveAllowedBoardIds(config.configPath, boardIds);
 
   console.error(`\nSaved ${boardIds.length} board(s) to ${config.configPath}`);
+  selected.forEach((board) => {
+    console.error(`  - ${board.name} (${board.id})`);
+  });
   console.error('\nOptional MCP env override:');
   console.error(`TRELLO_ALLOWED_BOARD_IDS=${boardIds.join(',')}`);
 }
