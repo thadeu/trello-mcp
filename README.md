@@ -30,7 +30,9 @@ Set `TRELLO_ALLOWED_BOARD_IDS` in the MCP env and skip onboarding.
 ## Requirements
 
 - **Development:** [Bun](https://bun.sh) 1.2+
-- **Runtime (published package):** Node.js 20+ (bundled `dist/index.js`)
+- **Runtime (published package):** Node.js 20+ (bundled `dist/main.js`, launched via `dist/index.js`)
+
+Global installs run `#!/usr/bin/env node`. If `node -v` shows an old version, switch with fnm/nvm before running `trello-mcp`.
 - Trello API key and token ([Power-Up admin](https://trello.com/power-ups/admin))
 - Recommended: dedicated Trello service account, not a personal user token
 
@@ -301,6 +303,21 @@ Adjust keys to match your client schema; the server binary and env vars stay the
 - Use a service account token with access only to work boards.
 - No delete-card tool in v1 to reduce accidental data loss.
 - Server logs errors to **stderr** only; stdout is reserved for MCP protocol.
+
+## Troubleshooting
+
+### `SyntaxError: Unexpected token '??='`
+
+Your shell is running an old Node.js binary from `PATH` (often system Node 14 while fnm/nvm has Node 20+ elsewhere).
+
+```bash
+node -v          # must be 20+
+which node       # check which binary runs
+fnm use 20       # or: nvm use 20
+trello-mcp onboard
+```
+
+Since v0.1.6 the launcher prints a clear error when Node is too old instead of failing on syntax.
 
 ## Development
 
