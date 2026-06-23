@@ -80,10 +80,14 @@ export class TrelloClient {
     this.config = config;
   }
 
-  async listBoards(): Promise<TrelloBoard[]> {
-    const boards = await this.request<TrelloBoard[]>('/members/me/boards', {
+  async listAllBoards(): Promise<TrelloBoard[]> {
+    return this.request<TrelloBoard[]>('/members/me/boards', {
       fields: 'id,name,url,closed',
     });
+  }
+
+  async listBoards(): Promise<TrelloBoard[]> {
+    const boards = await this.listAllBoards();
 
     return boards.filter((board) => this.config.allowedBoardIds.includes(board.id));
   }

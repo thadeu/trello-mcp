@@ -6,9 +6,26 @@ const config = {
   apiKey: 'test-key',
   token: 'test-token',
   allowedBoardIds: ['board-1'],
+  onboardingRequired: false,
+  configPath: '/tmp/trello-mcp/config.json',
 };
 
 describe('TrelloClient', () => {
+  it('lists all boards without allowlist filtering', async () => {
+    const fetchImpl = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => [
+        { id: 'board-1', name: 'Allowed', url: 'https://trello.com/b/1', closed: false },
+        { id: 'board-2', name: 'Other', url: 'https://trello.com/b/2', closed: false },
+      ],
+    });
+
+    const client = new TrelloClient(config, fetchImpl);
+    const boards = await client.listAllBoards();
+
+    expect(boards).toHaveLength(2);
+  });
+
   it('lists only allowed boards', async () => {
     const fetchImpl = vi.fn().mockResolvedValue({
       ok: true,

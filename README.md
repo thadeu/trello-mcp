@@ -7,7 +7,8 @@ Read and update Kanban cards on **allowlisted boards only**. Credentials stay in
 ## Features
 
 - stdio transport (MCP standard for local tools)
-- Board allowlist via `TRELLO_ALLOWED_BOARD_IDS`
+- Board allowlist via `TRELLO_ALLOWED_BOARD_IDS` or interactive onboarding
+- Onboarding flow when no boards are configured yet
 - Tools: list boards/lists/cards, get/create/update/move cards, add comments
 - Publishable to [npm](https://www.npmjs.com/package/@thadeu/trello-mcp), GitHub Packages, and GitHub release tarballs
 
@@ -24,7 +25,8 @@ Read and update Kanban cards on **allowlisted boards only**. Credentials stay in
 |----------|----------|-------------|
 | `TRELLO_API_KEY` | yes | API key from Trello Power-Up admin |
 | `TRELLO_TOKEN` | yes | User token with `read,write` scope |
-| `TRELLO_ALLOWED_BOARD_IDS` | yes | Comma-separated board ids the server may access |
+| `TRELLO_ALLOWED_BOARD_IDS` | no | Comma-separated board ids. Optional on first run — see [Onboarding](#onboarding) |
+| `TRELLO_CONFIG_PATH` | no | Override config file path (default: `~/.config/trello-mcp/config.json`) |
 
 Copy `.env.example` when developing locally. MCP clients pass these via `env` in server config.
 
@@ -98,6 +100,57 @@ All clients use the same pattern: spawn `trello-mcp` (or `npx`) over **stdio** a
 
 Use `"command": "trello-mcp"` if installed globally.
 
+On first install you only need `TRELLO_API_KEY` and `TRELLO_TOKEN`. Board selection happens via onboarding.
+
+## Onboarding
+
+If `TRELLO_ALLOWED_BOARD_IDS` is not set, the MCP server starts in onboarding mode and exposes setup tools before enabling card operations.
+
+### MCP flow (Cursor, Claude, etc.)
+
+1. Connect with only `TRELLO_API_KEY` and `TRELLO_TOKEN`
+2. Call `get_setup_status` — returns `onboarding_required: true`
+3. Call `list_available_boards` — lists boards from your Trello account
+4. Ask the user which board(s) to use
+5. Call `select_allowed_boards` with the chosen board ids
+6. Selection is saved to `~/.config/trello-mcp/config.json` and other tools unlock immediately
+
+Example minimal MCP config:
+
+```json
+{
+  "mcpServers": {
+    "trello": {
+      "command": "npx",
+      "args": ["-y", "@thadeu/trello-mcp"],
+      "env": {
+        "TRELLO_API_KEY": "your_key",
+        "TRELLO_TOKEN": "your_token"
+      }
+    }
+  }
+}
+```
+
+Use the board **id** (24-char hash), not the short code from the URL (`trello.com/b/Nh2gYTTn/...`).
+
+### CLI flow
+
+```bash
+export TRELLO_API_KEY=your_key
+export TRELLO_TOKEN=your_token
+trello-mcp onboard
+```
+
+Re-run with `--force` to change the saved boards.
+
+### Config priority
+
+1. `TRELLO_ALLOWED_BOARD_IDS` env var (wins on restart)
+2. Saved config file (`~/.config/trello-mcp/config.json`)
+3. Onboarding mode when neither is set
+
+
 ### Claude Desktop
 
 `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS):
@@ -165,6 +218,9 @@ Adjust keys to match your client schema; the server binary and env vars stay the
 
 | Tool | Description |
 |------|-------------|
+| `get_setup_status` | Check whether board onboarding is required |
+| `list_available_boards` | All accessible boards (onboarding) |
+| `select_allowed_boards` | Save user-selected boards and unlock tools |
 | `list_boards` | Boards filtered by allowlist |
 | `list_lists` | Lists on a board |
 | `list_cards` | Cards on a board or list |

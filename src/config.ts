@@ -1,15 +1,21 @@
+import { loadPersistedBoardIds, resolveConfigPath } from './board-store.js';
 import { BoardAccessError, ConfigError } from './errors.js';
 
 export type AppConfig = {
   apiKey: string;
   token: string;
   allowedBoardIds: string[];
+  onboardingRequired: boolean;
+  configPath: string;
 };
 
-export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
+export async function loadConfig(env: NodeJS.ProcessEnv = process.env): Promise<AppConfig> {
   const apiKey = env.TRELLO_API_KEY?.trim();
   const token = env.TRELLO_TOKEN?.trim();
-  const allowedBoardIds = parseBoardIds(env.TRELLO_ALLOWED_BOARD_IDS);
+  const configPath = resolveConfigPath(env);
+  const envBoardIds = parseBoardIds(env.TRELLO_ALLOWED_BOARD_IDS);
+  const fileBoardIds = envBoardIds.length > 0 ? [] : await loadPersistedBoardIds(configPath);
+  const allowedBoardIds = envBoardIds.length > 0 ? envBoardIds : fileBoardIds;
 
   if (!apiKey) {
     throw new ConfigError('TRELLO_API_KEY is required');
@@ -19,11 +25,13 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     throw new ConfigError('TRELLO_TOKEN is required');
   }
 
-  if (allowedBoardIds.length === 0) {
-    throw new ConfigError('TRELLO_ALLOWED_BOARD_IDS must include at least one board id');
-  }
-
-  return { apiKey, token, allowedBoardIds };
+  return {
+    apiKey,
+    token,
+    allowedBoardIds,
+    onboardingRequired: allowedBoardIds.length === 0,
+    configPath,
+  };
 }
 
 export function parseBoardIds(raw: string | undefined): string[] {
@@ -35,6 +43,13 @@ export function parseBoardIds(raw: string | undefined): string[] {
 }
 
 export function assertBoardAllowed(boardId: string, config: AppConfig): void {
+  if (config.onboardingRequired) {
+    throw new BoardAccessError(
+      boardId,
+      'Board setup is incomplete. Use list_available_boards and select_allowed_boards first.'
+    );
+  }
+
   if (!config.allowedBoardIds.includes(boardId)) {
     throw new BoardAccessError(boardId);
   }

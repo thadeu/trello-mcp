@@ -2,13 +2,24 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import type { TrelloClient } from '../trello-client.js';
 import { ensureBoardAccess, ensureCardBoardAccess, jsonResult } from './helpers.js';
+import { ensureOnboardingComplete, listBoardsResult, registerOnboardingTools } from './onboarding.js';
 
 export function registerTools(server: McpServer, client: TrelloClient): void {
+  registerOnboardingTools(server, client);
+
   server.tool(
     'list_boards',
     'List Trello boards allowed by TRELLO_ALLOWED_BOARD_IDS',
     {},
-    async () => jsonResult(await client.listBoards())
+    async () => {
+      const onboardingResult = listBoardsResult(client);
+
+      if (onboardingResult) {
+        return onboardingResult;
+      }
+
+      return jsonResult(await client.listBoards());
+    }
   );
 
   server.tool(
@@ -16,6 +27,7 @@ export function registerTools(server: McpServer, client: TrelloClient): void {
     'List lists (columns) on an allowed board',
     { board_id: z.string().describe('Trello board id') },
     async ({ board_id }) => {
+      ensureOnboardingComplete(client);
       ensureBoardAccess(client, board_id);
       return jsonResult(await client.listLists(board_id));
     }
@@ -29,6 +41,7 @@ export function registerTools(server: McpServer, client: TrelloClient): void {
       list_id: z.string().optional().describe('Optional Trello list id'),
     },
     async ({ board_id, list_id }) => {
+      ensureOnboardingComplete(client);
       ensureBoardAccess(client, board_id);
       return jsonResult(await client.listCards(board_id, list_id));
     }
@@ -39,6 +52,7 @@ export function registerTools(server: McpServer, client: TrelloClient): void {
     'Get a Trello card by id',
     { card_id: z.string().describe('Trello card id') },
     async ({ card_id }) => {
+      ensureOnboardingComplete(client);
       await ensureCardBoardAccess(client, card_id);
       return jsonResult(await client.getCard(card_id));
     }
@@ -56,6 +70,7 @@ export function registerTools(server: McpServer, client: TrelloClient): void {
       label_ids: z.array(z.string()).optional().describe('Trello label ids'),
     },
     async ({ board_id, list_id, name, desc, due, label_ids }) => {
+      ensureOnboardingComplete(client);
       ensureBoardAccess(client, board_id);
 
       const lists = await client.listLists(board_id);
@@ -90,6 +105,7 @@ export function registerTools(server: McpServer, client: TrelloClient): void {
       label_ids: z.array(z.string()).optional().describe('Replace card labels with these ids'),
     },
     async ({ card_id, name, desc, due, due_complete, closed, label_ids }) => {
+      ensureOnboardingComplete(client);
       await ensureCardBoardAccess(client, card_id);
 
       return jsonResult(
@@ -113,6 +129,7 @@ export function registerTools(server: McpServer, client: TrelloClient): void {
       list_id: z.string().describe('Destination list id'),
     },
     async ({ card_id, list_id }) => {
+      ensureOnboardingComplete(client);
       const boardId = await ensureCardBoardAccess(client, card_id);
       const lists = await client.listLists(boardId);
       const list = lists.find((item) => item.id === list_id);
@@ -133,6 +150,7 @@ export function registerTools(server: McpServer, client: TrelloClient): void {
       text: z.string().min(1).describe('Comment body'),
     },
     async ({ card_id, text }) => {
+      ensureOnboardingComplete(client);
       await ensureCardBoardAccess(client, card_id);
       return jsonResult(await client.addComment(card_id, text));
     }
@@ -145,6 +163,7 @@ export function registerTools(server: McpServer, client: TrelloClient): void {
       card_id: z.string().describe('Trello card id'),
     },
     async ({ card_id }) => {
+      ensureOnboardingComplete(client);
       await ensureCardBoardAccess(client, card_id);
       return jsonResult(await client.archiveCard(card_id));
     }
@@ -162,6 +181,7 @@ export function registerTools(server: McpServer, client: TrelloClient): void {
       set_cover: z.boolean().optional().describe('Use attachment as card cover when supported'),
     },
     async ({ card_id, url, file_path, name, mime_type, set_cover }) => {
+      ensureOnboardingComplete(client);
       await ensureCardBoardAccess(client, card_id);
 
       if (!url && !file_path) {

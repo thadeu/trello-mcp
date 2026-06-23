@@ -13,8 +13,8 @@ export class ConfigError extends TrelloMcpError {
 }
 
 export class BoardAccessError extends TrelloMcpError {
-  constructor(boardId: string) {
-    super(`Board ${boardId} is not in TRELLO_ALLOWED_BOARD_IDS`);
+  constructor(boardId: string, detail?: string) {
+    super(detail ?? `Board ${boardId} is not in TRELLO_ALLOWED_BOARD_IDS`);
     this.name = 'BoardAccessError';
   }
 }
