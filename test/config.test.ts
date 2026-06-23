@@ -63,9 +63,9 @@ describe('loadConfig', () => {
   });
 
   it('throws when credentials are missing', async () => {
-    await expect(loadConfig({})).rejects.toThrow('TRELLO_API_KEY is required');
-    await expect(
-      loadConfig({ TRELLO_API_KEY: 'key' })
-    ).rejects.toThrow('TRELLO_TOKEN is required');
+    await expect(loadConfig({})).rejects.toThrow('Trello credentials are required');
+    await expect(loadConfig({ TRELLO_API_KEY: 'key' })).rejects.toThrow(
+      'Trello credentials are required'
+    );
   });
 });

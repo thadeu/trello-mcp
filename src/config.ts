@@ -1,4 +1,5 @@
 import { loadPersistedBoardIds, resolveConfigPath } from './board-store.js';
+import { missingCredentialMessage } from './credentials.js';
 import { BoardAccessError, ConfigError } from './errors.js';
 
 export type AppConfig = {
@@ -18,11 +19,11 @@ export async function loadConfig(env: NodeJS.ProcessEnv = process.env): Promise<
   const allowedBoardIds = envBoardIds.length > 0 ? envBoardIds : fileBoardIds;
 
   if (!apiKey) {
-    throw new ConfigError('TRELLO_API_KEY is required');
+    throw new ConfigError(missingCredentialMessage());
   }
 
   if (!token) {
-    throw new ConfigError('TRELLO_TOKEN is required');
+    throw new ConfigError(missingCredentialMessage());
   }
 
   return {

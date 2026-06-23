@@ -149,6 +149,16 @@ Steps:
 
 ### CLI flow (terminal)
 
+If credentials are in `~/.cursor/mcp.json`, just run:
+
+```bash
+trello-mcp onboard
+```
+
+Credential sources (in order): shell env → `.env` → `~/.config/trello-mcp/.env` → `~/.cursor/mcp.json` → interactive prompt.
+
+Or export manually:
+
 ```bash
 export TRELLO_API_KEY=your_key
 export TRELLO_TOKEN=your_token
