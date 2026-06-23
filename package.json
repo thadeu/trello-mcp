@@ -1,6 +1,6 @@
 {
   "name": "@thadeu/trello-mcp",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Universal MCP server for Trello boards, lists, and cards",
   "type": "module",
   "main": "./dist/index.js",
@@ -33,7 +33,7 @@
   "author": "Thadeu Esteves <dev@thadeu.org>",
   "license": "MIT",
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
+    "access": "public"
   },
   "engines": {
     "bun": ">=1.2.0",

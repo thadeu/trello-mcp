@@ -9,7 +9,7 @@ Read and update Kanban cards on **allowlisted boards only**. Credentials stay in
 - stdio transport (MCP standard for local tools)
 - Board allowlist via `TRELLO_ALLOWED_BOARD_IDS`
 - Tools: list boards/lists/cards, get/create/update/move cards, add comments
-- Publishable to GitHub Packages and installable from GitHub release tarballs
+- Publishable to [npm](https://www.npmjs.com/package/@thadeu/trello-mcp), GitHub Packages, and GitHub release tarballs
 
 ## Requirements
 
@@ -30,40 +30,34 @@ Copy `.env.example` when developing locally. MCP clients pass these via `env` in
 
 ## Install
 
-### Option 1 — GitHub Packages (recommended for teams)
+### Option 1 — npm (recommended)
 
 ```bash
-npm install -g @thadeu/trello-mcp \
-  --registry=https://npm.pkg.github.com
+npm install -g @thadeu/trello-mcp
 ```
 
-Requires a GitHub token with `read:packages`. See `.npmrc.example`.
-
-Run:
-
-```bash
-trello-mcp
-```
-
-### Option 2 — npx (no global install)
+Or run without a global install:
 
 ```bash
 npx @thadeu/trello-mcp
 ```
 
-With GitHub Packages auth configured in `~/.npmrc`:
+### Option 2 — GitHub Packages
 
-```ini
-@thadeu:registry=https://npm.pkg.github.com
-//npm.pkg.github.com/:_authToken=YOUR_GITHUB_TOKEN
+Useful if you already mirror internal packages on GitHub.
+
+```bash
+npm install -g @thadeu/trello-mcp --registry=https://npm.pkg.github.com
 ```
+
+Requires a GitHub token with `read:packages`. See `.npmrc.example`.
 
 ### Option 3 — GitHub release URL
 
 Each release publishes an npm tarball (`.tgz`) built from `dist/` in CI.
 
 ```bash
-npm install -g https://github.com/thadeu/trello-mcp/releases/download/v0.1.0/thadeu-trello-mcp-0.1.0.tgz
+npm install -g https://github.com/thadeu/trello-mcp/releases/download/v0.1.2/thadeu-trello-mcp-0.1.2.tgz
 ```
 
 Replace the version in the URL with the tag you need.
@@ -208,15 +202,21 @@ bun run inspector     # MCP Inspector
 Tag a version to build, test, publish, and attach assets:
 
 ```bash
-git tag v0.1.0
-git push origin v0.1.0
+git tag v0.1.2
+git push origin v0.1.2
 ```
 
 Workflow `.github/workflows/release.yml`:
 
 1. Runs tests and builds `dist/`
 2. Creates GitHub release with `npm pack` tarball
-3. Publishes `@thadeu/trello-mcp` to GitHub Packages
+3. Publishes `@thadeu/trello-mcp` to **npm** and **GitHub Packages**
+
+### npm publish setup (one-time)
+
+1. Create an npm account and ensure you own the `@thadeu` scope
+2. Create an npm **Automation** token
+3. Add repository secret `NPM_TOKEN` in GitHub → Settings → Secrets → Actions
 
 ## License
 
