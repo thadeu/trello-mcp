@@ -1,6 +1,6 @@
 {
   "name": "@thadeu/trello-mcp",
-  "version": "0.1.10",
+  "version": "0.2.0",
   "description": "Universal MCP server for Trello boards, lists, and cards",
   "bin": {
     "trello-mcp": "bin/trello-mcp.js"
@@ -39,8 +39,8 @@
   "optionalDependencies": {
     "@thadeu/trello-mcp-darwin-arm64": "0.1.10",
     "@thadeu/trello-mcp-darwin-x64": "0.1.10",
-    "@thadeu/trello-mcp-linux-x64": "0.1.10",
-    "@thadeu/trello-mcp-linux-arm64": "0.1.10"
+    "@thadeu/trello-mcp-linux-arm64": "0.1.10",
+    "@thadeu/trello-mcp-linux-x64": "0.1.10"
   },
   "devDependencies": {
     "@types/bun": "latest"
