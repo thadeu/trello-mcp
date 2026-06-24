@@ -1,4 +1,4 @@
-import { chmodSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -24,19 +24,26 @@ const TARGETS: Target[] = [
 
 const version = pkg.version;
 
-// Guard against optionalDependencies version drift: every platform package
-// must be pinned to the root version, or npx installs a mismatched binary.
-const optionalDeps = (pkg as { optionalDependencies?: Record<string, string> }).optionalDependencies ?? {};
-const drifted = Object.entries(optionalDeps).filter(([, v]) => v !== version);
+// Keep optionalDependencies pinned to the root version (single source of truth).
+// Bumping `version` is enough — this rewrites the pins so npx never resolves a
+// binary whose version differs from the launcher.
+const pkgPath = join(root, 'package.json');
+const rootPkg = JSON.parse(readFileSync(pkgPath, 'utf8')) as {
+  optionalDependencies?: Record<string, string>;
+};
 
-if (drifted.length > 0) {
-  console.error(`optionalDependencies out of sync with version ${version}:`);
+let synced = false;
 
-  for (const [name, v] of drifted) {
-    console.error(`  ${name}: ${v}`);
+for (const name of Object.keys(rootPkg.optionalDependencies ?? {})) {
+  if (rootPkg.optionalDependencies![name] !== version) {
+    rootPkg.optionalDependencies![name] = version;
+    synced = true;
   }
+}
 
-  process.exit(1);
+if (synced) {
+  writeFileSync(pkgPath, `${JSON.stringify(rootPkg, null, 2)}\n`);
+  console.error(`synced optionalDependencies to ${version}`);
 }
 
 // Optionally build a single target: `bun run scripts/build-binaries.ts darwin-arm64`

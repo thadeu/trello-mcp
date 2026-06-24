@@ -346,8 +346,8 @@ npm/<os>-<arch>/        build output (gitignored): binary + package.json
 Tag a version to cross-compile, publish, and create a GitHub release:
 
 ```bash
-git tag v0.1.10
-git push origin v0.1.10
+git tag v0.2.0
+git push origin v0.2.0
 ```
 
 Workflow `.github/workflows/release.yml`:
