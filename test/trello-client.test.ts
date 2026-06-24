@@ -123,6 +123,34 @@ describe('TrelloClient', () => {
     expect(url.searchParams.get('closed')).toBe('true');
   });
 
+  it('lists attachments on a card', async () => {
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => [
+          {
+            id: 'attachment-1',
+            name: 'https://github.com/org/repo/pull/1',
+            url: 'https://github.com/org/repo/pull/1',
+            mimeType: null,
+            bytes: null,
+            date: '2026-01-01T00:00:00.000Z',
+            isUpload: false,
+          },
+        ],
+      });
+
+    const client = new TrelloClient(config, fetchImpl);
+    const attachments = await client.listAttachments('card-1');
+
+    expect(attachments).toHaveLength(1);
+    expect(attachments[0]?.url).toBe('https://github.com/org/repo/pull/1');
+
+    const url = new URL(fetchImpl.mock.calls[0]?.[0] as string);
+    expect(url.pathname).toBe('/1/cards/card-1/attachments');
+  });
+
   it('adds a URL attachment', async () => {
     const fetchImpl = vi.fn().mockResolvedValue({
       ok: true,

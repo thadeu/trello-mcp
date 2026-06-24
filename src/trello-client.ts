@@ -118,6 +118,23 @@ export class TrelloClient {
     });
   }
 
+  async listAttachments(cardId: string): Promise<TrelloAttachment[]> {
+    return this.request<TrelloAttachment[]>(`/cards/${cardId}/attachments`, {
+      fields: 'id,name,url,mimeType,bytes,date,isUpload',
+    });
+  }
+
+  async getCardWithAttachments(
+    cardId: string
+  ): Promise<TrelloCard & { attachments: TrelloAttachment[] }> {
+    const [card, attachments] = await Promise.all([
+      this.getCard(cardId),
+      this.listAttachments(cardId),
+    ]);
+
+    return { ...card, attachments };
+  }
+
   async createCard(input: CreateCardInput): Promise<TrelloCard> {
     return this.request<TrelloCard>('/cards', {
       idList: input.idList,

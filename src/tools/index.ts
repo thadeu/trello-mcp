@@ -49,12 +49,23 @@ export function registerTools(server: McpServer, client: TrelloClient): void {
 
   server.tool(
     'get_card',
-    'Get a Trello card by id',
+    'Get a Trello card by id, including link attachments (e.g. GitHub PRs)',
     { card_id: z.string().describe('Trello card id') },
     async ({ card_id }) => {
       ensureOnboardingComplete(client);
       await ensureCardBoardAccess(client, card_id);
-      return jsonResult(await client.getCard(card_id));
+      return jsonResult(await client.getCardWithAttachments(card_id));
+    }
+  );
+
+  server.tool(
+    'list_attachments',
+    'List attachments on an allowed-board card (URLs, files, GitHub PR links)',
+    { card_id: z.string().describe('Trello card id') },
+    async ({ card_id }) => {
+      ensureOnboardingComplete(client);
+      await ensureCardBoardAccess(client, card_id);
+      return jsonResult(await client.listAttachments(card_id));
     }
   );
 

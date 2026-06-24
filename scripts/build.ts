@@ -2,6 +2,8 @@ import { chmodSync, mkdirSync, renameSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import pkg from '../package.json' with { type: 'json' };
+
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const distDir = join(root, 'dist');
 const bundleOut = join(distDir, 'index.js');
@@ -39,6 +41,9 @@ const result = await Bun.build({
   format: 'esm',
   minify: false,
   sourcemap: 'external',
+  define: {
+    'process.env.TRELLO_MCP_VERSION': JSON.stringify(pkg.version),
+  },
 });
 
 if (!result.success) {

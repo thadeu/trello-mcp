@@ -8,7 +8,8 @@ import { TrelloClient } from './trello-client.js';
 import { registerTools } from './tools/index.js';
 
 const SERVER_NAME = 'trello-mcp';
-const SERVER_VERSION = process.env.npm_package_version ?? '0.0.0';
+const SERVER_VERSION =
+  process.env.npm_package_version ?? process.env.TRELLO_MCP_VERSION ?? '0.0.0';
 
 async function resolveEnvForCommand(command: string | undefined): Promise<NodeJS.ProcessEnv> {
   let env = await loadMergedEnv(process.env);
