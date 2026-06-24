@@ -7,14 +7,32 @@
 
 const { spawnSync } = require('child_process');
 
-function resolveBinary() {
-  const pkg = '@thadeu/trello-mcp-' + process.platform + '-' + process.arch;
+function candidatePackages() {
+  const list = ['@thadeu/trello-mcp-' + process.platform + '-' + process.arch];
 
-  try {
-    return require.resolve(pkg + '/bin/trello-mcp');
-  } catch (err) {
-    return null;
+  // Apple Silicon runs both arm64 (native) and x64 (Rosetta). When the runtime
+  // arch differs from the installed binary — e.g. an x64 Node under Rosetta on
+  // an arm64 Mac reports process.arch === 'x64' — fall back to the sibling
+  // darwin arch so the native binary is still found and executed.
+  if (process.platform === 'darwin') {
+    const sibling = process.arch === 'arm64' ? 'x64' : 'arm64';
+
+    list.push('@thadeu/trello-mcp-darwin-' + sibling);
   }
+
+  return list;
+}
+
+function resolveBinary() {
+  for (const pkg of candidatePackages()) {
+    try {
+      return require.resolve(pkg + '/bin/trello-mcp');
+    } catch (err) {
+      // try next candidate
+    }
+  }
+
+  return null;
 }
 
 const binary = resolveBinary();

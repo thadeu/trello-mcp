@@ -12,6 +12,7 @@
   ],
   "scripts": {
     "dev": "cd cli && go run .",
+    "build:dev": "cd cli && go build -ldflags=\"-s -w\" -o trello-mcp .",
     "build": "bun run scripts/build-binaries.ts",
     "build:local": "bun run scripts/build-binaries.ts $(node -e \"process.stdout.write(process.platform+'-'+process.arch)\")",
     "test": "cd cli && go test ./...",
