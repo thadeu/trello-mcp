@@ -59,6 +59,12 @@ type TrelloAttachment struct {
 	IsUpload bool    `json:"isUpload"`
 }
 
+type TrelloMember struct {
+	ID       string `json:"id"`
+	Username string `json:"username"`
+	FullName string `json:"fullName"`
+}
+
 type CardWithAttachments struct {
 	TrelloCard
 	Attachments []TrelloAttachment `json:"attachments"`
@@ -184,6 +190,15 @@ func (c *TrelloClient) ListAttachments(cardID string) ([]TrelloAttachment, error
 	}, &attachments)
 
 	return attachments, err
+}
+
+func (c *TrelloClient) ListCardMembers(cardID string) ([]TrelloMember, error) {
+	var members []TrelloMember
+	err := c.request(http.MethodGet, "/cards/"+cardID+"/members", map[string]string{
+		"fields": "id,username,fullName",
+	}, &members)
+
+	return members, err
 }
 
 func (c *TrelloClient) GetCardWithAttachments(cardID string) (*CardWithAttachments, error) {

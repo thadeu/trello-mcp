@@ -170,6 +170,26 @@ func registerTools(server *mcp.Server, client *TrelloClient) {
 	})
 
 	mcp.AddTool(server, &mcp.Tool{
+		Name:        "list_card_members",
+		Description: "List the members assigned to an allowed-board card",
+	}, func(_ context.Context, _ *mcp.CallToolRequest, in cardIDInput) (*mcp.CallToolResult, any, error) {
+		if err := ensureOnboardingComplete(client.cfg); err != nil {
+			return nil, nil, err
+		}
+
+		if _, err := ensureCardBoardAccess(client, in.CardID); err != nil {
+			return nil, nil, err
+		}
+
+		members, err := client.ListCardMembers(in.CardID)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		return jsonResult(members)
+	})
+
+	mcp.AddTool(server, &mcp.Tool{
 		Name:        "create_card",
 		Description: "Create a card on an allowed board list",
 	}, func(_ context.Context, _ *mcp.CallToolRequest, in createCardInput) (*mcp.CallToolResult, any, error) {

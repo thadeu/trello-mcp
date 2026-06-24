@@ -288,6 +288,7 @@ Adjust keys to match your client schema; the server binary and env vars stay the
 | `list_cards` | Cards on a board or list |
 | `get_card` | Single card details **with attachments** (PR links, files) |
 | `list_attachments` | Attachments on a card (GitHub PR links, URLs, uploads) |
+| `list_card_members` | Members assigned to a card (id, username, full name) |
 | `create_card` | New card in a list |
 | `update_card` | Update name, description, due date, labels, archive |
 | `move_card` | Move card to another list |
