@@ -1,5 +1,7 @@
 node_modules/
 dist/
+npm/
+cli/trello-mcp
 .env
 .env.*
 !.env.example

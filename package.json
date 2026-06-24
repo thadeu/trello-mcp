@@ -2,23 +2,21 @@
   "name": "@thadeu/trello-mcp",
   "version": "0.1.10",
   "description": "Universal MCP server for Trello boards, lists, and cards",
-  "type": "module",
-  "main": "./dist/index.js",
   "bin": {
-    "trello-mcp": "./dist/index.js"
+    "trello-mcp": "bin/trello-mcp.js"
   },
   "files": [
-    "dist",
+    "bin",
     "LICENSE",
     "README.md"
   ],
   "scripts": {
-    "build": "bun run scripts/build.ts",
-    "dev": "bun --watch src/index.ts",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "typecheck": "tsc --noEmit",
-    "inspector": "bunx @modelcontextprotocol/inspector bun dist/index.js"
+    "dev": "cd cli && go run .",
+    "build": "bun run scripts/build-binaries.ts",
+    "build:local": "bun run scripts/build-binaries.ts $(node -e \"process.stdout.write(process.platform+'-'+process.arch)\")",
+    "test": "cd cli && go test ./...",
+    "vet": "cd cli && go vet ./...",
+    "inspector": "cd cli && go build -o /tmp/trello-mcp . && bunx @modelcontextprotocol/inspector /tmp/trello-mcp"
   },
   "repository": {
     "type": "git",
@@ -36,16 +34,15 @@
     "access": "public"
   },
   "engines": {
-    "bun": ">=1.2.0",
-    "node": ">=20"
+    "node": ">=14"
   },
-  "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.12.1",
-    "zod": "^3.24.2"
+  "optionalDependencies": {
+    "@thadeu/trello-mcp-darwin-arm64": "0.1.10",
+    "@thadeu/trello-mcp-darwin-x64": "0.1.10",
+    "@thadeu/trello-mcp-linux-x64": "0.1.10",
+    "@thadeu/trello-mcp-linux-arm64": "0.1.10"
   },
   "devDependencies": {
-    "@types/bun": "latest",
-    "typescript": "^5.8.2",
-    "vitest": "^3.0.9"
+    "@types/bun": "latest"
   }
 }

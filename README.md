@@ -21,20 +21,23 @@ Set `TRELLO_ALLOWED_BOARD_IDS` in the MCP env and skip onboarding.
 
 ## Features
 
+- Single self-contained **native binary** (Go) — no Node/Bun runtime needed at runtime
+- Prebuilt per-platform binaries shipped via npm `optionalDependencies` (esbuild-style)
+- `npx -y @thadeu/trello-mcp` works on any machine, any Node version (the launcher is trivial)
 - stdio transport (MCP standard for local tools)
 - Interactive **onboarding** when no boards are configured
 - Board allowlist via env var or saved config file
 - Tools: list boards/lists/cards, get/create/update/move cards, add comments, attachments
-- Publishable to [npm](https://www.npmjs.com/package/@thadeu/trello-mcp), GitHub Packages, and GitHub release tarballs
 
 ## Requirements
 
-- **Development:** [Bun](https://bun.sh) 1.2+
-- **Runtime (published package):** Node.js 20+ (bundled `dist/main.js`, launched via `dist/index.js`)
-
-Global installs run `#!/usr/bin/env node`. If `node -v` shows an old version, switch with fnm/nvm before running `trello-mcp`.
-- Trello API key and token ([Power-Up admin](https://trello.com/power-ups/admin))
-- Recommended: dedicated Trello service account, not a personal user token
+- **Runtime:** none beyond your MCP client. The published package ships a native Go
+  binary per platform; the `npx`/`trello-mcp` launcher is plain CommonJS and runs on
+  any Node version (even 14) — no fnm/nvm gymnastics.
+- **Supported platforms:** macOS and Linux on x64 and arm64.
+- **Development:** [Go](https://go.dev) 1.25+ and [Bun](https://bun.sh) 1.2+ (build scripts).
+- Trello API key and token ([Power-Up admin](https://trello.com/power-ups/admin)).
+- Recommended: dedicated Trello service account, not a personal user token.
 
 ## Environment variables
 
@@ -49,52 +52,35 @@ Copy `.env.example` when developing locally. MCP clients pass these via `env` in
 
 ## Install
 
-### Option 1 — npm (recommended)
+### Option 1 — npm / npx (recommended)
+
+```bash
+npx -y @thadeu/trello-mcp
+```
+
+Or install globally:
 
 ```bash
 npm install -g @thadeu/trello-mcp@latest
 ```
 
-Or run without a global install:
+npm automatically pulls the prebuilt binary for your platform
+(`@thadeu/trello-mcp-<os>-<arch>`) through `optionalDependencies`.
 
-```bash
-npx @thadeu/trello-mcp
-```
-
-### Option 2 — GitHub repo (public)
-
-```bash
-npm install -g github:thadeu/trello-mcp
-```
-
-Pin a version with `#v0.1.4` if needed.
-
-### Option 3 — GitHub Packages
-
-```bash
-npm install -g @thadeu/trello-mcp --registry=https://npm.pkg.github.com
-```
-
-Requires a GitHub token with `read:packages`. See `.npmrc.example`.
-
-### Option 4 — GitHub release URL
-
-Each release publishes an npm tarball (`.tgz`) built from `dist/` in CI.
-
-```bash
-npm install -g https://github.com/thadeu/trello-mcp/releases/download/v0.1.4/thadeu-trello-mcp-0.1.4.tgz
-```
-
-Replace the version in the URL with the tag you need.
-
-### Option 5 — From source
+### Option 2 — From source (Go)
 
 ```bash
 git clone https://github.com/thadeu/trello-mcp.git
-cd trello-mcp
+cd trello-mcp/cli
+go build -o trello-mcp .
+./trello-mcp            # runs the MCP server over stdio
+```
+
+Cross-compile every platform package (requires Go + Bun):
+
+```bash
 bun install
-bun run build
-node dist/index.js
+bun run build          # → npm/<platform>/bin/trello-mcp
 ```
 
 ## Onboarding
@@ -319,46 +305,60 @@ Adjust keys to match your client schema; the server binary and env vars stay the
 
 ## Troubleshooting
 
-### `SyntaxError: Unexpected token '??='`
+### `no prebuilt binary for <platform>-<arch>`
 
-Your shell is running an old Node.js binary from `PATH` (often system Node 14 while fnm/nvm has Node 20+ elsewhere).
+npm did not install the platform package. Most common cause: installing with
+`--no-optional` / `--omit=optional`. Reinstall without it:
 
 ```bash
-node -v          # must be 20+
-which node       # check which binary runs
-fnm use 20       # or: nvm use 20
-trello-mcp onboard
+npm install -g @thadeu/trello-mcp        # not --no-optional
 ```
 
-Since v0.1.6 the launcher prints a clear error when Node is too old instead of failing on syntax.
+Supported platforms are macOS and Linux on x64/arm64. The binary is native Go and
+does **not** depend on your Node version — old-Node errors like
+`SyntaxError: Unexpected token '??='` (from the previous JS build) no longer apply.
 
 ## Development
 
-Built with **Bun** (bundle) and **Vitest** (tests). TypeScript is used for types only — no `tsc` emit.
+The server is written in **Go** (`cli/`). The root npm package is a thin launcher
+plus build scripts (run with **Bun**).
 
 ```bash
-bun install
-bun run test          # vitest (not `bun test`, which is Bun's native runner)
-bun run typecheck     # tsc --noEmit
-bun run build         # bun build → dist/index.js
-bun run dev           # watch src/index.ts
-bun run inspector     # MCP Inspector
+cd cli && go run .          # run the server over stdio
+cd cli && go test ./...     # tests
+cd cli && go vet ./...      # vet
+bun run build               # cross-compile all platforms → npm/<platform>/
+bun run build:local         # only the current platform
+bun run inspector           # build + MCP Inspector
+```
+
+Layout:
+
+```
+cli/                    Go MCP server (main, client, config, tools, onboard)
+bin/trello-mcp.js       launcher: resolves the platform binary and execs it
+scripts/build-binaries.ts  cross-compile + emit per-platform npm packages
+npm/<os>-<arch>/        build output (gitignored): binary + package.json
 ```
 
 ## Release
 
-Tag a version to build, test, publish, and attach assets:
+Tag a version to cross-compile, publish, and create a GitHub release:
 
 ```bash
-git tag v0.1.4
-git push origin v0.1.4
+git tag v0.1.10
+git push origin v0.1.10
 ```
 
 Workflow `.github/workflows/release.yml`:
 
-1. Runs tests and builds `dist/`
-2. Creates GitHub release with `npm pack` tarball
-3. Publishes `@thadeu/trello-mcp` to **npm** and **GitHub Packages**
+1. Cross-compiles the Go binary for every supported platform (`bun run build`)
+2. Publishes each `@thadeu/trello-mcp-<os>-<arch>` package to **npm**
+3. Publishes the root `@thadeu/trello-mcp` (with matching `optionalDependencies`)
+4. Creates a GitHub release with generated notes
+
+Bump `version` in `package.json` **and** the `optionalDependencies` versions together
+(the build script fails if they drift).
 
 ### npm publish setup (one-time)
 
