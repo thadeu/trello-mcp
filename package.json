@@ -38,10 +38,10 @@
     "node": ">=14"
   },
   "optionalDependencies": {
-    "@thadeu/trello-mcp-darwin-arm64": "0.2.2",
-    "@thadeu/trello-mcp-darwin-x64": "0.2.2",
-    "@thadeu/trello-mcp-linux-arm64": "0.2.2",
-    "@thadeu/trello-mcp-linux-x64": "0.2.2"
+    "@thadeu/trello-mcp-darwin-arm64": "0.2.3",
+    "@thadeu/trello-mcp-darwin-x64": "0.2.3",
+    "@thadeu/trello-mcp-linux-arm64": "0.2.3",
+    "@thadeu/trello-mcp-linux-x64": "0.2.3"
   },
   "devDependencies": {
     "@types/bun": "^1.3.14",
