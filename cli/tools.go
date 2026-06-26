@@ -62,6 +62,34 @@ type addAttachmentInput struct {
 	SetCover *bool   `json:"set_cover,omitempty" jsonschema:"Use attachment as card cover when supported"`
 }
 
+type addChecklistInput struct {
+	CardID string `json:"card_id" jsonschema:"Trello card id"`
+	Name   string `json:"name" jsonschema:"Checklist title"`
+}
+
+type checklistIDInput struct {
+	ChecklistID string `json:"checklist_id" jsonschema:"Trello checklist id"`
+}
+
+type addCheckItemInput struct {
+	ChecklistID string `json:"checklist_id" jsonschema:"Trello checklist id"`
+	Name        string `json:"name" jsonschema:"Check item text"`
+	Checked     *bool  `json:"checked,omitempty" jsonschema:"Mark item complete on creation"`
+}
+
+type updateCheckItemInput struct {
+	ChecklistID string  `json:"checklist_id" jsonschema:"Trello checklist id"`
+	CheckItemID string  `json:"check_item_id" jsonschema:"Trello check item id"`
+	Name        *string `json:"name,omitempty" jsonschema:"New check item text"`
+	Checked     *bool  `json:"checked,omitempty" jsonschema:"Mark item complete or incomplete"`
+	Due         *string `json:"due,omitempty" jsonschema:"Due date in ISO 8601 format, or empty string to clear"`
+}
+
+type deleteCheckItemInput struct {
+	ChecklistID string `json:"checklist_id" jsonschema:"Trello checklist id"`
+	CheckItemID string `json:"check_item_id" jsonschema:"Trello check item id"`
+}
+
 type listAvailableBoardsInput struct {
 	IncludeClosed *bool `json:"include_closed,omitempty" jsonschema:"Include archived boards (default: false)"`
 }
@@ -131,7 +159,7 @@ func registerTools(server *mcp.Server, client *TrelloClient) {
 
 	mcp.AddTool(server, &mcp.Tool{
 		Name:        "get_card",
-		Description: "Get a Trello card by id, including link attachments (e.g. GitHub PRs)",
+		Description: "Get a Trello card by id, including attachments and checklists",
 	}, func(_ context.Context, _ *mcp.CallToolRequest, in cardIDInput) (*mcp.CallToolResult, any, error) {
 		if err := ensureOnboardingComplete(client.cfg); err != nil {
 			return nil, nil, err
@@ -358,6 +386,135 @@ func registerTools(server *mcp.Server, client *TrelloClient) {
 
 		return jsonResult(attachment)
 	})
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "list_checklists",
+		Description: "List checklists and items on an allowed-board card",
+	}, func(_ context.Context, _ *mcp.CallToolRequest, in cardIDInput) (*mcp.CallToolResult, any, error) {
+		if err := ensureOnboardingComplete(client.cfg); err != nil {
+			return nil, nil, err
+		}
+
+		if _, err := ensureCardBoardAccess(client, in.CardID); err != nil {
+			return nil, nil, err
+		}
+
+		checklists, err := client.ListChecklists(in.CardID)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		return jsonResult(checklists)
+	})
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "add_checklist",
+		Description: "Add a checklist to an allowed-board card",
+	}, func(_ context.Context, _ *mcp.CallToolRequest, in addChecklistInput) (*mcp.CallToolResult, any, error) {
+		if err := ensureOnboardingComplete(client.cfg); err != nil {
+			return nil, nil, err
+		}
+
+		if _, err := ensureCardBoardAccess(client, in.CardID); err != nil {
+			return nil, nil, err
+		}
+
+		checklist, err := client.AddChecklist(in.CardID, in.Name)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		return jsonResult(checklist)
+	})
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "delete_checklist",
+		Description: "Delete a checklist from an allowed-board card",
+	}, func(_ context.Context, _ *mcp.CallToolRequest, in checklistIDInput) (*mcp.CallToolResult, any, error) {
+		if err := ensureOnboardingComplete(client.cfg); err != nil {
+			return nil, nil, err
+		}
+
+		if _, err := ensureChecklistBoardAccess(client, in.ChecklistID); err != nil {
+			return nil, nil, err
+		}
+
+		if err := client.DeleteChecklist(in.ChecklistID); err != nil {
+			return nil, nil, err
+		}
+
+		return jsonResult(map[string]any{
+			"deleted":      true,
+			"checklist_id": in.ChecklistID,
+		})
+	})
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "add_check_item",
+		Description: "Add an item to a checklist on an allowed-board card",
+	}, func(_ context.Context, _ *mcp.CallToolRequest, in addCheckItemInput) (*mcp.CallToolResult, any, error) {
+		if err := ensureOnboardingComplete(client.cfg); err != nil {
+			return nil, nil, err
+		}
+
+		if _, err := ensureChecklistBoardAccess(client, in.ChecklistID); err != nil {
+			return nil, nil, err
+		}
+
+		item, err := client.AddCheckItem(in.ChecklistID, in.Name, in.Checked)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		return jsonResult(item)
+	})
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "update_check_item",
+		Description: "Update a checklist item on an allowed-board card",
+	}, func(_ context.Context, _ *mcp.CallToolRequest, in updateCheckItemInput) (*mcp.CallToolResult, any, error) {
+		if err := ensureOnboardingComplete(client.cfg); err != nil {
+			return nil, nil, err
+		}
+
+		if _, err := ensureChecklistBoardAccess(client, in.ChecklistID); err != nil {
+			return nil, nil, err
+		}
+
+		item, err := client.UpdateCheckItem(in.ChecklistID, in.CheckItemID, UpdateCheckItemInput{
+			Name:    in.Name,
+			Checked: in.Checked,
+			Due:     in.Due,
+		})
+		if err != nil {
+			return nil, nil, err
+		}
+
+		return jsonResult(item)
+	})
+
+	mcp.AddTool(server, &mcp.Tool{
+		Name:        "delete_check_item",
+		Description: "Delete an item from a checklist on an allowed-board card",
+	}, func(_ context.Context, _ *mcp.CallToolRequest, in deleteCheckItemInput) (*mcp.CallToolResult, any, error) {
+		if err := ensureOnboardingComplete(client.cfg); err != nil {
+			return nil, nil, err
+		}
+
+		if _, err := ensureChecklistBoardAccess(client, in.ChecklistID); err != nil {
+			return nil, nil, err
+		}
+
+		if err := client.DeleteCheckItem(in.ChecklistID, in.CheckItemID); err != nil {
+			return nil, nil, err
+		}
+
+		return jsonResult(map[string]any{
+			"deleted":       true,
+			"checklist_id":  in.ChecklistID,
+			"check_item_id": in.CheckItemID,
+		})
+	})
 }
 
 func registerOnboardingTools(server *mcp.Server, client *TrelloClient) {
@@ -505,6 +662,15 @@ func ensureCardBoardAccess(client *TrelloClient, cardID string) (string, error) 
 	}
 
 	return card.IDBoard, nil
+}
+
+func ensureChecklistBoardAccess(client *TrelloClient, checklistID string) (string, error) {
+	checklist, err := client.GetChecklist(checklistID)
+	if err != nil {
+		return "", err
+	}
+
+	return ensureCardBoardAccess(client, checklist.IDCard)
 }
 
 func hasListID(lists []TrelloList, listID string) bool {

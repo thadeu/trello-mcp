@@ -65,9 +65,25 @@ type TrelloMember struct {
 	FullName string `json:"fullName"`
 }
 
+type TrelloCheckItem struct {
+	ID    string  `json:"id"`
+	Name  string  `json:"name"`
+	State string  `json:"state"`
+	Due   *string `json:"due"`
+	Pos   float64 `json:"pos"`
+}
+
+type TrelloChecklist struct {
+	ID         string            `json:"id"`
+	Name       string            `json:"name"`
+	IDCard     string            `json:"idCard"`
+	CheckItems []TrelloCheckItem `json:"checkItems"`
+}
+
 type CardWithAttachments struct {
 	TrelloCard
 	Attachments []TrelloAttachment `json:"attachments"`
+	Checklists  []TrelloChecklist  `json:"checklists"`
 }
 
 type CreateCardInput struct {
@@ -201,6 +217,86 @@ func (c *TrelloClient) ListCardMembers(cardID string) ([]TrelloMember, error) {
 	return members, err
 }
 
+func (c *TrelloClient) ListChecklists(cardID string) ([]TrelloChecklist, error) {
+	var checklists []TrelloChecklist
+	err := c.request(http.MethodGet, "/cards/"+cardID+"/checklists", map[string]string{
+		"checkItems": "all",
+		"fields":     "id,name,idCard",
+	}, &checklists)
+
+	return checklists, err
+}
+
+func (c *TrelloClient) GetChecklist(checklistID string) (*TrelloChecklist, error) {
+	var checklist TrelloChecklist
+	err := c.request(http.MethodGet, "/checklists/"+checklistID, map[string]string{
+		"fields": "id,name,idCard",
+	}, &checklist)
+
+	return &checklist, err
+}
+
+func (c *TrelloClient) AddChecklist(cardID, name string) (*TrelloChecklist, error) {
+	var checklist TrelloChecklist
+	err := c.request(http.MethodPost, "/cards/"+cardID+"/checklists", map[string]string{
+		"name": name,
+	}, &checklist)
+
+	return &checklist, err
+}
+
+func (c *TrelloClient) DeleteChecklist(checklistID string) error {
+	return c.request(http.MethodDelete, "/checklists/"+checklistID, nil, nil)
+}
+
+func (c *TrelloClient) AddCheckItem(checklistID, name string, checked *bool) (*TrelloCheckItem, error) {
+	query := map[string]string{"name": name}
+
+	if checked != nil {
+		query["checked"] = boolStr(*checked)
+	}
+
+	var item TrelloCheckItem
+	err := c.request(http.MethodPost, "/checklists/"+checklistID+"/checkItems", query, &item)
+
+	return &item, err
+}
+
+type UpdateCheckItemInput struct {
+	Name    *string
+	Checked *bool
+	Due     *string
+}
+
+func (c *TrelloClient) UpdateCheckItem(checklistID, checkItemID string, input UpdateCheckItemInput) (*TrelloCheckItem, error) {
+	query := map[string]string{}
+
+	if input.Name != nil {
+		query["name"] = *input.Name
+	}
+
+	if input.Checked != nil {
+		if *input.Checked {
+			query["state"] = "complete"
+		} else {
+			query["state"] = "incomplete"
+		}
+	}
+
+	if input.Due != nil {
+		query["due"] = *input.Due
+	}
+
+	var item TrelloCheckItem
+	err := c.request(http.MethodPut, "/checklists/"+checklistID+"/checkItems/"+checkItemID, query, &item)
+
+	return &item, err
+}
+
+func (c *TrelloClient) DeleteCheckItem(checklistID, checkItemID string) error {
+	return c.request(http.MethodDelete, "/checklists/"+checklistID+"/checkItems/"+checkItemID, nil, nil)
+}
+
 func (c *TrelloClient) GetCardWithAttachments(cardID string) (*CardWithAttachments, error) {
 	card, err := c.GetCard(cardID)
 	if err != nil {
@@ -212,7 +308,12 @@ func (c *TrelloClient) GetCardWithAttachments(cardID string) (*CardWithAttachmen
 		return nil, err
 	}
 
-	return &CardWithAttachments{TrelloCard: *card, Attachments: attachments}, nil
+	checklists, err := c.ListChecklists(cardID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &CardWithAttachments{TrelloCard: *card, Attachments: attachments, Checklists: checklists}, nil
 }
 
 func (c *TrelloClient) CreateCard(input CreateCardInput) (*TrelloCard, error) {
