@@ -22,6 +22,11 @@ const TARGETS: Target[] = [
   { os: 'linux', cpu: 'arm64', goos: 'linux', goarch: 'arm64' },
 ];
 
+const scriptPath = fileURLToPath(import.meta.url);
+const scriptArgIndex = process.argv.indexOf(scriptPath);
+const userArgs = scriptArgIndex >= 0 ? process.argv.slice(scriptArgIndex + 1) : process.argv.slice(2);
+const targetNames = new Set(TARGETS.map((t) => `${t.os}-${t.cpu}`));
+
 const version = pkg.version;
 
 // Keep optionalDependencies pinned to the root version (single source of truth).
@@ -46,12 +51,12 @@ if (synced) {
   console.error(`synced optionalDependencies to ${version}`);
 }
 
-if (process.argv.includes('--sync-only')) {
+if (userArgs.includes('--sync-only')) {
   process.exit(0);
 }
 
 // Optionally build a single target: `bun run scripts/build-binaries.ts darwin-arm64`
-const only = process.argv.find((arg) => arg !== '--sync-only');
+const only = userArgs.find((arg) => targetNames.has(arg));
 const targets = only ? TARGETS.filter((t) => `${t.os}-${t.cpu}` === only) : TARGETS;
 
 if (targets.length === 0) {
