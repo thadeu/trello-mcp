@@ -9,14 +9,22 @@
         "@types/node": "^26.0.0",
       },
       "optionalDependencies": {
-        "@thadeu/trello-mcp-darwin-arm64": "0.2.0",
-        "@thadeu/trello-mcp-darwin-x64": "0.2.0",
-        "@thadeu/trello-mcp-linux-arm64": "0.2.0",
-        "@thadeu/trello-mcp-linux-x64": "0.2.0",
+        "@thadeu/trello-mcp-darwin-arm64": "0.2.4",
+        "@thadeu/trello-mcp-darwin-x64": "0.2.4",
+        "@thadeu/trello-mcp-linux-arm64": "0.2.4",
+        "@thadeu/trello-mcp-linux-x64": "0.2.4",
       },
     },
   },
   "packages": {
+    "@thadeu/trello-mcp-darwin-arm64": ["@thadeu/trello-mcp-darwin-arm64@0.2.4", "", { "os": "darwin", "cpu": "arm64" }, "sha512-b3TZw6Dsf7tIqs2XwwvuRww3Op3IW4YAst5fc37n0yhqIWSU6damXoAEv/wjuD8PjaX3sKKnDUGix+gCeiyuGg=="],
+
+    "@thadeu/trello-mcp-darwin-x64": ["@thadeu/trello-mcp-darwin-x64@0.2.4", "", { "os": "darwin", "cpu": "x64" }, "sha512-MO1zpH/7Z5cN+0MgjWypyDAfttXdhcFhFkGZyzfF1+v+/rEZEu5hEPefuM64G4s7bIfcll/rb8sp4rA4zKt9PQ=="],
+
+    "@thadeu/trello-mcp-linux-arm64": ["@thadeu/trello-mcp-linux-arm64@0.2.4", "", { "os": "linux", "cpu": "arm64" }, "sha512-KrHFRCFFp57W8e7Y4j76PklN3SCLoZT3qwg7r5zP3QNibKZj77RyIom7ABXhQUMELqEQL6pEjfvj97Vr61q4vg=="],
+
+    "@thadeu/trello-mcp-linux-x64": ["@thadeu/trello-mcp-linux-x64@0.2.4", "", { "os": "linux", "cpu": "x64" }, "sha512-HJTFwAeRGq3yPAwd32jS0X6N2oLxG83rhlBJ3BuE6qEjEFWbRDOVLsO7iSOqqYvpv4zVwD4qwBEBJG2sqEy1uw=="],
+
     "@types/bun": ["@types/bun@1.3.14", "", { "dependencies": { "bun-types": "1.3.14" } }, "sha512-h1hFqFVcvAvD9j9K7ZW7vd82aSA+rTdznZa+5bwvCwqSB1jmmfLcbIWhOLx1/+boy/xmjgCs/OMUL8hRJSmnPw=="],
 
     "@types/node": ["@types/node@26.0.0", "", { "dependencies": { "undici-types": "~8.3.0" } }, "sha512-vf2YFi1iY9lHGwNJMs01biZFbKJkrZR1T6/MlzjhJLPdntOHLhTrDSnSVcdtvjihi4VQNlrFRIxLsDBlQpAipA=="],
