@@ -1,6 +1,6 @@
 {
   "name": "@thadeu/trello-mcp",
-  "version": "0.2.7",
+  "version": "0.2.8",
   "description": "Universal MCP server for Trello boards, lists, and cards",
   "bin": {
     "trello-mcp": "bin/trello-mcp.js"
@@ -18,7 +18,10 @@
     "test": "cd cli && go test ./...",
     "vet": "cd cli && go vet ./...",
     "inspector": "cd cli && go build -o /tmp/trello-mcp . && bunx @modelcontextprotocol/inspector /tmp/trello-mcp",
-    "version": "bun run scripts/release.ts"
+    "release": "bun run scripts/release.ts",
+    "release:patch": "bun run scripts/release.ts patch",
+    "release:minor": "bun run scripts/release.ts minor",
+    "release:major": "bun run scripts/release.ts major"
   },
   "repository": {
     "type": "git",

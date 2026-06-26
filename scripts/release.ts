@@ -1,15 +1,51 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+const pkgPath = join(root, 'package.json');
 const increments = ['patch', 'minor', 'major'] as const;
 
 type Increment = (typeof increments)[number];
 
 function usage(): never {
-  console.error('usage: bun run version <patch|minor|major> [--no-push]');
+  console.error('usage: bun run release <patch|minor|major> [--no-push]');
   process.exit(1);
+}
+
+function bumpVersion(current: string, increment: Increment): string {
+  const match = /^(\d+)\.(\d+)\.(\d+)$/.exec(current);
+  if (!match) {
+    throw new Error(`invalid semver: ${current}`);
+  }
+
+  let major = Number(match[1]);
+  let minor = Number(match[2]);
+  let patch = Number(match[3]);
+
+  switch (increment) {
+    case 'patch':
+      patch++;
+      break;
+    case 'minor':
+      minor++;
+      patch = 0;
+      break;
+    case 'major':
+      major++;
+      minor = 0;
+      patch = 0;
+      break;
+  }
+
+  return `${major}.${minor}.${patch}`;
+}
+
+function bumpPackageVersion(increment: Increment): string {
+  const pkg = JSON.parse(readFileSync(pkgPath, 'utf8')) as { version: string };
+  pkg.version = bumpVersion(pkg.version, increment);
+  writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`);
+  return pkg.version;
 }
 
 async function run(cmd: string[]): Promise<void> {
@@ -56,7 +92,8 @@ async function main(): Promise<void> {
   await assertCleanTree();
 
   console.error(`release: bump ${increment}`);
-  await run(['bun', 'pm', 'version', increment, '--no-git-tag-version']);
+  const version = bumpPackageVersion(increment);
+  console.error(`release: ${version}`);
 
   console.error('release: sync optionalDependencies');
   await run(['bun', 'run', 'scripts/build-binaries.ts', '--sync-only']);
@@ -64,8 +101,7 @@ async function main(): Promise<void> {
   console.error('release: sync lockfile');
   await run(['bun', 'install']);
 
-  const pkg = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')) as { version: string };
-  const tag = `v${pkg.version}`;
+  const tag = `v${version}`;
 
   console.error(`release: commit ${tag}`);
   await run(['git', 'add', 'package.json', 'bun.lock']);
