@@ -46,8 +46,12 @@ if (synced) {
   console.error(`synced optionalDependencies to ${version}`);
 }
 
+if (process.argv.includes('--sync-only')) {
+  process.exit(0);
+}
+
 // Optionally build a single target: `bun run scripts/build-binaries.ts darwin-arm64`
-const only = process.argv[2];
+const only = process.argv.find((arg) => arg !== '--sync-only');
 const targets = only ? TARGETS.filter((t) => `${t.os}-${t.cpu}` === only) : TARGETS;
 
 if (targets.length === 0) {

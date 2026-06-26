@@ -17,7 +17,8 @@
     "build:local": "bun run scripts/build-binaries.ts $(node -e \"process.stdout.write(process.platform+'-'+process.arch)\")",
     "test": "cd cli && go test ./...",
     "vet": "cd cli && go vet ./...",
-    "inspector": "cd cli && go build -o /tmp/trello-mcp . && bunx @modelcontextprotocol/inspector /tmp/trello-mcp"
+    "inspector": "cd cli && go build -o /tmp/trello-mcp . && bunx @modelcontextprotocol/inspector /tmp/trello-mcp",
+    "version": "bun run scripts/release.ts"
   },
   "repository": {
     "type": "git",
